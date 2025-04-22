@@ -3,6 +3,7 @@ import qbittorrentapi
 from qbittorrentapi import Client, TorrentStates
 import time
 import json
+import subprocess
 
 def killClient(qbt_client):
   # os.system('cmd /c "taskkill /im qbittorrent.exe"')
@@ -11,17 +12,42 @@ def killClient(qbt_client):
 def startClient():
   os.system('cmd /c "start qtshortcut.lnk"')
 
+
 def displayClientInfo(qbt_client):
   print(f'qBittorrent: {qbt_client.app.version}')
   print(f'qBittorrent Web API: {qbt_client.app.web_api_version}')
   for k,v in qbt_client.app.build_info.items(): print(f'{k}: {v}')
+  
+def process_exists(process_name):
+    progs = str(subprocess.check_output('tasklist'))
+    if process_name in progs:
+        return True
+    else:
+        return False
+
+
+def checkClient():
+  if process_exists('qbittorrent.exe'):
+    print('Running')
+    return True
+  else:
+    print('Not Running')
+    return False
+
+# Check if qbit is running, start if it is not and close scrypt  
+if checkClient() == False :
+    print('Booting')
+    startClient()
+    time.sleep(10)
+    print('Was dead now is alive')
+    sys.exit()
 
 # instantiate a Client using the appropriate WebUI configuration
 qbt_client = qbittorrentapi.Client(
     host='localhost',
     port=8080,
     username='admin',
-    password='adminadmin',
+    password='wifipass',
 )
 
 # the Client will automatically acquire/maintain a logged-in state
@@ -57,10 +83,19 @@ for torrent in qbt_client.torrents_info():
 
 print(f'good {numGoodTorrents} bad {numBadTorrents}')
 if numBadTorrents > 0 and numGoodTorrents == 0:
-  print("commencing reboot")
+  print("Commencing Reboot")
   killClient(qbt_client)
-  time.sleep(10)
-  startClient()
+  numtry = 0
+  
+  while checkClient() == True :
+    print('Shutting Down')
+    time.sleep(10)
+  
+  while checkClient() == False :  
+    if numtry == 0 :
+      startClient()
+      print('Booting')
+      numtry += 1
+      time.sleep(10)
 
 print("done")
-
