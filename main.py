@@ -1,4 +1,4 @@
-import os
+import os 
 import qbittorrentapi
 from qbittorrentapi import Client, TorrentStates
 import time
@@ -47,7 +47,7 @@ qbt_client = qbittorrentapi.Client(
     host='localhost',
     port=8080,
     username='admin',
-    password='wifipass',
+    password='password',
 )
 
 # the Client will automatically acquire/maintain a logged-in state
@@ -67,16 +67,16 @@ numGoodTorrents = 0
 now = int(time.time())
 for torrent in qbt_client.torrents_info():
   # check if torrent is downloading
-  if torrent.state_enum.is_downloading:
+  if torrent.state_enum.is_downloading or torrent.state_enum.is_uploading:
     swarmCount = torrent.num_complete + torrent.num_incomplete + torrent.num_seeds + torrent.num_leechs
     lastChunkDownloadedSecondsAgo = now - torrent.last_activity
     print(f'last chunk was DL {lastChunkDownloadedSecondsAgo} seconds ago. DL speed is {torrent.dlspeed}. Swarm count {swarmCount}')
 
-    if swarmCount >= 0 and torrent.dlspeed <= 200 and lastChunkDownloadedSecondsAgo > 60*10:
-      print(f'{torrent.name} {torrent.hash} is downloading but is BAD!')
+    if swarmCount >= 0 and torrent.dlspeed <= 1 and lastChunkDownloadedSecondsAgo > 60*10 and torrent.upspeed <= 1:
+      print(f'{torrent.name} {torrent.hash} is downloading or seeding but is BAD!')
       numBadTorrents += 1
     else:
-      print(f'{torrent.name} {torrent.hash} is downloading and is GOOD!')
+      print(f'{torrent.name} {torrent.hash} is downloading or seeding and is GOOD!')
       numGoodTorrents += 1
   else:
     print(f'{torrent.name} {torrent.hash} is not being counted')
@@ -99,3 +99,5 @@ if numBadTorrents > 0 and numGoodTorrents == 0:
       time.sleep(10)
 
 print("done")
+
+
