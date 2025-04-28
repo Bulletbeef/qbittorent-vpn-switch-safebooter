@@ -26,3 +26,9 @@ Tip* add folder location of `run.bat` to `start in` in task scheduler
 - trying to lauch via shortcut will launch an new instance of qbittorrent how well they sync im not sure
   
 ![Instructions 3](instructions3.png "3")
+
+Changelog
+v1.0 - 4/27/25
+   - added shutdown and boot monitioring
+   - added seeding to good torrent list 
+   
