@@ -9,8 +9,9 @@ This script detects whether the running qBittorent instance (using the webUi plu
 ## Install
 1. Add a shorcut to qbittorent to this folder and rename it to "qtshortcut".
 2. Change the links in `run.bat` to point to where you installed this repo.
-3. Run `pip install qbittorrent-api`
-4. Run `python main` whenever. Use the Windows Scheduler Service.
+3. Edit `config.py` to match settings in qbittorrent
+4. Run `pip install qbittorrent-api`
+6. Run `python main` whenever. Use the Windows Scheduler Service.
    
 ## Windows Scheduler Service
 
@@ -32,3 +33,12 @@ v1.0 - 4/27/25
    - added shutdown and boot monitioring
    - added seeding to good torrent list 
    
+v2.0 - 5/9/25 - current
+   - speed is now used to determine connection state
+   - improved readability
+   - {Security} - removed personal info from main file
+   - added a config file
+
+v3.0 - n/a - future
+   - will be a Lite version of v2
+   - will only include what is absolutely necessary 

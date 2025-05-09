@@ -4,6 +4,7 @@ from qbittorrentapi import Client, TorrentStates
 import time
 import json
 import subprocess
+from config import *
 
 def killClient(qbt_client):
   # os.system('cmd /c "taskkill /im qbittorrent.exe"')
@@ -38,66 +39,74 @@ def checkClient():
 if checkClient() == False :
     print('Booting')
     startClient()
-    time.sleep(10)
+    time.sleep(waitTime)
     print('Was dead now is alive')
     sys.exit()
 
 # instantiate a Client using the appropriate WebUI configuration
-qbt_client = qbittorrentapi.Client(
-    host='localhost',
-    port=8080,
-    username='admin',
-    password='password',
-)
+qbt_client = qbittorrentapi.Client( host,port,username,password,)
 
 # the Client will automatically acquire/maintain a logged-in state
 # in line with any request. therefore, this is not strictly necessary;
-# however, you may want to test the provided login credentials.
+# however, you may want to test the provided login credentials. 
+
 try:
   qbt_client.auth_log_in()
 except qbittorrentapi.LoginFailed as e:
   print(e)
 
-print("got client")
+print("Got client")
 
 # Determine if we're in a bad connection state
-# This is when there are others in the swarm yet no progress is being made.
+# This is when there is no progress is being made on any torrent that is in a downloading state.
+
 numBadTorrents = 0
 numGoodTorrents = 0
 now = int(time.time())
-for torrent in qbt_client.torrents_info():
-  # check if torrent is downloading
-  if torrent.state_enum.is_downloading or torrent.state_enum.is_uploading:
-    swarmCount = torrent.num_complete + torrent.num_incomplete + torrent.num_seeds + torrent.num_leechs
-    lastChunkDownloadedSecondsAgo = now - torrent.last_activity
-    print(f'last chunk was DL {lastChunkDownloadedSecondsAgo} seconds ago. DL speed is {torrent.dlspeed}. Swarm count {swarmCount}')
+torrentSpeed = 0
+globalSpeed = 0
 
-    if swarmCount >= 0 and torrent.dlspeed <= 1 and lastChunkDownloadedSecondsAgo > 60*10 and torrent.upspeed <= 1:
-      print(f'{torrent.name} {torrent.hash} is downloading or seeding but is BAD!')
+for torrent in qbt_client.torrents_info():
+  
+  # check if torrent is downloading
+  
+  if torrent.state_enum.is_downloading or torrent.state_enum.is_uploading:
+    torrentSpeed = (torrent.dlspeed + torrent.upspeed)
+    swarmCount = torrent.num_complete + torrent.num_incomplete + torrent.num_seeds + torrent.num_leechs
+
+    if torrentSpeed<=0 :
+      lastChunkDownloadedSecondsAgo = now - torrent.last_activity
+      print(f'\n{torrent.name}')
+      print(f'BAD! - last chunk was loaded {lastChunkDownloadedSecondsAgo} seconds ago. Speed is {torrentSpeed}. Swarm count {swarmCount}')
       numBadTorrents += 1
+   
     else:
-      print(f'{torrent.name} {torrent.hash} is downloading or seeding and is GOOD!')
+      print(f'\n{torrent.name}\nGOOD!')
       numGoodTorrents += 1
   else:
-    print(f'{torrent.name} {torrent.hash} is not being counted')
+    print(f'\n{torrent.name} \nEXCLUDED!')
+    torrentSpeed = 0
+  globalSpeed += torrentSpeed
 
-print(f'good {numGoodTorrents} bad {numBadTorrents}')
-if numBadTorrents > 0 and numGoodTorrents == 0:
+print(f'Good {numGoodTorrents} Bad {numBadTorrents} Global Speed is {globalSpeed}')
+
+#decision to reboot
+
+if globalSpeed <= 0 and numBadTorrents >= 1:
   print("Commencing Reboot")
   killClient(qbt_client)
   numtry = 0
   
   while checkClient() == True :
     print('Shutting Down')
-    time.sleep(10)
+    time.sleep(waitTime)
   
   while checkClient() == False :  
     if numtry == 0 :
       startClient()
       print('Booting')
       numtry += 1
-      time.sleep(10)
+      time.sleep(waitTime)
 
-print("done")
-
-
+print("Done")
+time.sleep(10+waitTime)
